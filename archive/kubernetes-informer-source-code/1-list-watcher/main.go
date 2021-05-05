@@ -59,9 +59,9 @@ func main() {
 
 	// w 的类型为 watch.Interface，提供 ResultChan 方法读取事件，
 	// 和 List 一样，传入的 ListOptions 中的 FieldSelector 始终会被替换为前面的 selector，
-	// ResourceVersion 和 ResourceVersionMatch 是 Watch 时非常重要的两个参数，
+	// ResourceVersion 是 Watch 时非常重要的参数，
 	// 它代表一次客户端与服务器进行交互时对应的资源版本，
-	// 结合 ResourceVersionMatch，表示本次请求对 ResourceVersion 的筛选，
+	// 结合另一个参数 ResourceVersionMatch，表示本次请求对 ResourceVersion 的筛选，
 	// 比如以下请求表示：获取版本新于 resourceVersion 的事件。
 	// 在考虑连接中断和定期重新同步 (resync) 的情况下，
 	// 对 ResourceVersion 的管理就变得更为复杂，我们先不考虑这些情况。
