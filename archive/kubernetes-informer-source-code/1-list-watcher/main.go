@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/spongeprojects/magicconch"
-	"github.com/wbsnail/articles/archive/kubernetes-informer-source-code/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,14 +12,21 @@ import (
 	"os/signal"
 )
 
-func main() {
-	// 创建 ListWatch 实例
-	clientset := utils.MustClientset()
+// newConfigMapsListerWatcher 用于创建 tmp namespace 下 configmaps 资源的 ListerWatcher 实例
+func newConfigMapsListerWatcher() cache.ListerWatcher {
+	clientset := mustClientset()              // 前面有说明
 	client := clientset.CoreV1().RESTClient() // 客户端，请求器
 	resource := "configmaps"                  // GET 请求参数之一
 	namespace := "tmp"                        // GET 请求参数之一
 	selector := fields.Everything()           // GET 请求参数之一
 	lw := cache.NewListWatchFromClient(client, resource, namespace, selector)
+	return lw
+}
+
+func main() {
+	lw := newConfigMapsListerWatcher()
+
+	fmt.Println("Initial list:")
 
 	// list 的类型为 runtime.Object, 需要经过反射或类型转换才能使用，
 	// 传入的 ListOptions 中的 FieldSelector 始终会被替换为前面的 selector
@@ -66,6 +72,8 @@ func main() {
 
 	stopCh := make(chan os.Signal)
 	signal.Notify(stopCh, os.Interrupt)
+
+	fmt.Println("Start watching...")
 
 loop:
 	for {
