@@ -60,8 +60,7 @@ func main() {
 	// 在考虑连接中断和定期重新同步 (resync) 的情况下，
 	// 对 ResourceVersion 的管理就变得更为复杂，我们先不考虑这些情况。
 	w, err := lw.Watch(metav1.ListOptions{
-		ResourceVersion:      resourceVersion,
-		ResourceVersionMatch: metav1.ResourceVersionMatchNotOlderThan,
+		ResourceVersion: resourceVersion,
 	})
 	magicconch.Must(err)
 
