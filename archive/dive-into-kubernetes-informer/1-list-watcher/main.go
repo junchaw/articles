@@ -47,7 +47,7 @@ func main() {
 		}
 		fmt.Println(configMap.Name)
 
-		// 如果只关注 meta 信息，也可以使用 meta.Accessor 方法
+		// 如果只关注 meta 信息，也可以不进行类型转换，而是使用 meta.Accessor 方法
 		// accessor, err := meta.Accessor(item)
 		// magicconch.Must(err)
 		// fmt.Println(accessor.GetName())
