@@ -32,12 +32,12 @@ func main() {
 		},
 	})
 
-	stopper := make(chan struct{})
-	defer close(stopper)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
 
 	fmt.Println("Start syncing....")
 
-	go sharedInformer.Run(stopper)
+	go sharedInformer.Run(stopCh)
 
-	<-stopper
+	<-stopCh
 }

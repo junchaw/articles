@@ -24,14 +24,14 @@ func main() {
 		},
 	})
 
-	stopper := make(chan struct{})
-	defer close(stopper)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
 
 	fmt.Println("Start syncing....")
 
-	go informer.Run(stopper)
+	go informer.Run(stopCh)
 
-	if !cache.WaitForCacheSync(stopper, informer.HasSynced) {
+	if !cache.WaitForCacheSync(stopCh, informer.HasSynced) {
 		panic("timed out waiting for caches to sync")
 	}
 
@@ -49,5 +49,5 @@ func main() {
 		return strings.Join(keys, ", ")
 	})
 
-	<-stopper
+	<-stopCh
 }

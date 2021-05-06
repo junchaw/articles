@@ -35,12 +35,12 @@ func main() {
 		},
 	})
 
-	stopper := make(chan struct{})
-	defer close(stopper)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
 
 	fmt.Println("Start syncing....")
 
-	go controller.Run(stopper)
+	go controller.Run(stopCh)
 
-	<-stopper
+	<-stopCh
 }
