@@ -30,6 +30,11 @@ func newQueue(store cache.Store) cache.Queue {
 // 当 Reflector 开始运行 (Run) 后，队列中就会推入新收到的事件。
 func newConfigMapsReflector(queue cache.Queue) *cache.Reflector {
 	lw := newConfigMapsListerWatcher() // 前面有说明
+	// 第 2 个参数是 expectedType, 用此参数限制进入队列的事件，
+	// 当然在 List 和 Watch 操作时返回的数据就只有一种类型，这个参数只起校验的作用；
+	// 第 4 个参数是 resyncPeriod，
+	// 这里传了 0，表示从不重新同步（除非连接超时或者中断），
+	// 如果传了非 0 值，会定期进行全量同步，避免累积和服务器的不一致。
 	return cache.NewReflector(lw, &corev1.ConfigMap{}, queue, 0)
 }
 
