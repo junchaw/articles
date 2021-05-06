@@ -15,10 +15,6 @@ func main() {
 
 	fmt.Println(string(a), b)
 	fmt.Println(string(a) == b)
+	fmt.Println(len(string(a)), len(b))
 	fmt.Println(a, []byte(b))
-
-	// Output:
-	// test test
-	// false
-	// [116 101 115 116 0 0 0 0 0 0 0 0 0 0 0 0] [116 101 115 116]
 }
