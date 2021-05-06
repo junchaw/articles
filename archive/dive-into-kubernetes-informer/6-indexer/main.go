@@ -12,6 +12,8 @@ func main() {
 
 	lw := newConfigMapsListerWatcher()
 	indexers := cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}
+	// 仅演示用，只关心 indexer，不处理事件，所以传一个空的 HandlerFunc，
+	// 实际使用中一般不会这样做
 	indexer, informer := cache.NewIndexerInformer(
 		lw, &corev1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{}, indexers)
 
