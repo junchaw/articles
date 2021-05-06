@@ -21,17 +21,17 @@ func main() {
 		},
 	})
 
-	stopper := make(chan struct{})
-	defer close(stopper)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
 
 	fmt.Println("Start syncing....")
 
-	go configMapsInformer.Run(stopper)
+	go configMapsInformer.Run(stopCh)
 	runtime.HandleCrash()
 
-	if !cache.WaitForCacheSync(stopper, configMapsInformer.HasSynced) {
+	if !cache.WaitForCacheSync(stopCh, configMapsInformer.HasSynced) {
 		panic("timed out waiting for caches to sync")
 	}
 
-	<-stopper
+	<-stopCh
 }
