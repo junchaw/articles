@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
+	fmt.Println("----- 5-shared-informer -----")
+
 	lw := newConfigMapsListerWatcher()
 	sharedInformer := cache.NewSharedInformer(lw, &corev1.ConfigMap{}, 0)
 	// 添加一个处理程序

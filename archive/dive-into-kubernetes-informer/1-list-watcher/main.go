@@ -24,9 +24,9 @@ func newConfigMapsListerWatcher() cache.ListerWatcher {
 }
 
 func main() {
-	lw := newConfigMapsListerWatcher()
+	fmt.Println("----- 1-list-watcher -----")
 
-	fmt.Println("Initial list:")
+	lw := newConfigMapsListerWatcher()
 
 	// list 的类型为 runtime.Object, 需要经过反射或类型转换才能使用，
 	// 传入的 ListOptions 中的 FieldSelector 始终会被替换为前面的 selector
@@ -37,6 +37,8 @@ func main() {
 	// 提取出的 items 类型为 []runtime.Object
 	items, err := meta.ExtractList(list)
 	magicconch.Must(err)
+
+	fmt.Println("Initial list:")
 
 	for _, item := range items {
 		configMap, ok := item.(*corev1.ConfigMap)

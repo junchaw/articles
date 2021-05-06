@@ -7,6 +7,8 @@ import (
 )
 
 func newController() cache.Controller {
+	fmt.Println("----- 3-controller -----")
+
 	lw := newConfigMapsListerWatcher()
 	store := newStore()
 	queue := newQueue(store)
@@ -49,12 +51,12 @@ func newController() cache.Controller {
 func main() {
 	controller := newController()
 
-	stopper := make(chan struct{})
-	defer close(stopper)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
 
 	fmt.Println("Start syncing....")
 
-	go controller.Run(stopper)
+	go controller.Run(stopCh)
 
-	<-stopper
+	<-stopCh
 }

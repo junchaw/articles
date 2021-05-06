@@ -8,6 +8,8 @@ import (
 )
 
 func main() {
+	fmt.Println("----- 6-indexer -----")
+
 	lw := newConfigMapsListerWatcher()
 	indexers := cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}
 	indexer, informer := cache.NewIndexerInformer(
@@ -20,10 +22,12 @@ func main() {
 
 	go informer.Run(stopper)
 
+	// 在 informer 首次同步完成后再操作
 	if !cache.WaitForCacheSync(stopper, informer.HasSynced) {
 		panic("timed out waiting for caches to sync")
 	}
 
+	// 获取 cache.NamespaceIndex 索引下，索引值为 "tmp" 中的所有键
 	keys, err := indexer.IndexKeys(cache.NamespaceIndex, "tmp")
 	magicconch.Must(err)
 	for _, k := range keys {

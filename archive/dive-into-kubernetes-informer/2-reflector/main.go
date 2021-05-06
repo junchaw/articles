@@ -34,6 +34,8 @@ func newConfigMapsReflector(queue cache.Queue) *cache.Reflector {
 }
 
 func main() {
+	fmt.Println("----- 2-reflector -----")
+
 	store := newStore()
 	queue := newQueue(store)
 	reflector := newConfigMapsReflector(queue)
@@ -43,8 +45,6 @@ func main() {
 
 	// reflector 开始运行后，队列中就会推入新收到的事件
 	go reflector.Run(stopCh)
-
-	fmt.Println("Start syncing...")
 
 	// 注意处理事件过程中维护好 store 状态，包括 Add, Update, Delete 操作，
 	// 否则会出现不同步问题，在 Informer 当中这些逻辑都已经被封装好了，但目前我们还需要关心一下。
@@ -75,6 +75,8 @@ func main() {
 		}
 		return nil
 	}
+
+	fmt.Println("Start syncing...")
 
 	// 持续运行直到 stopCh 关闭
 	wait.Until(func() {

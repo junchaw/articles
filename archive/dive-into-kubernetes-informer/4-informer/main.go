@@ -7,8 +7,10 @@ import (
 )
 
 func main() {
+	fmt.Println("----- 4-informer -----")
+
 	lw := newConfigMapsListerWatcher()
-	// 第一个返回的参数是 cache.Store，这里用不到所以直接丢弃
+	// 第一个返回的参数是 cache.Store，这里暂时用不到所以直接丢弃
 	_, controller := cache.NewInformer(lw, &corev1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			configMap, ok := obj.(*corev1.ConfigMap)

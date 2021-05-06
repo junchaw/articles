@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	fmt.Println("----- 7-indexer-informer -----")
+
 	lw := newConfigMapsListerWatcher()
 	indexers := cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}
 	indexer, informer := cache.NewIndexerInformer(lw, &corev1.ConfigMap{}, 0, cache.ResourceEventHandlerFuncs{
