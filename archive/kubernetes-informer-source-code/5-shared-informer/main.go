@@ -9,6 +9,7 @@ import (
 func main() {
 	lw := newConfigMapsListerWatcher()
 	sharedInformer := cache.NewSharedInformer(lw, &corev1.ConfigMap{}, 0)
+	// 添加一个处理程序
 	sharedInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			configMap, ok := obj.(*corev1.ConfigMap)
@@ -18,6 +19,7 @@ func main() {
 			fmt.Printf("created, printing namespace: %s\n", configMap.Namespace)
 		},
 	})
+	// 添加另一个处理程序
 	sharedInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			configMap, ok := obj.(*corev1.ConfigMap)
