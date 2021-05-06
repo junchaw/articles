@@ -1,4 +1,4 @@
-module github.com/wbsnail/articles/archive/kubernetes-informer-source-code
+module github.com/wbsnail/articles/archive/dive-into-kubernetes-informer
 
 go 1.16
 
