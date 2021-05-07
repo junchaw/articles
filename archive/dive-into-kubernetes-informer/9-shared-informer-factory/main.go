@@ -45,7 +45,7 @@ func main() {
 
 	fmt.Println("Start syncing....")
 
-	go configMapsInformer.Run(stopCh)
+	go informerFactory.Start(stopCh)
 
 	<-stopCh
 }
