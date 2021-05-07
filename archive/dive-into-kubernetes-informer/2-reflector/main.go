@@ -34,7 +34,8 @@ func newConfigMapsReflector(queue cache.Queue) *cache.Reflector {
 	// 当然在 List 和 Watch 操作时返回的数据就只有一种类型，这个参数只起校验的作用；
 	// 第 4 个参数是 resyncPeriod，
 	// 这里传了 0，表示从不重新同步（除非连接超时或者中断），
-	// 如果传了非 0 值，会定期进行全量同步，避免累积和服务器的不一致。
+	// 如果传了非 0 值，会定期进行全量同步，避免累积和服务器的不一致，
+	// 同步过程中会产生 SYNC 类型的事件。
 	return cache.NewReflector(lw, &corev1.ConfigMap{}, queue, 0)
 }
 
