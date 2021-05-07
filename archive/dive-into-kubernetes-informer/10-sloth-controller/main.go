@@ -16,6 +16,7 @@ import (
 	"k8s.io/klog/v2"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 )
 
@@ -25,12 +26,13 @@ type SlothController struct {
 	configMapLister   listerscorev1.ConfigMapLister
 	configMapInformer cache.SharedIndexInformer
 	queue             workqueue.RateLimitingInterface
+	processingItems   *sync.WaitGroup
 
-	// maxRetries 树懒君需要重试多少次才会放弃
+	// maxRetries 树懒们需要重试多少次才会放弃
 	maxRetries int
-	// chanceOfFailure 树懒君处理任务有多少概率失败（百分比）
+	// chanceOfFailure 树懒们处理任务有多少概率失败（百分比）
 	chanceOfFailure int
-	// nap 树懒君睡一觉要多久
+	// nap 树懒睡一觉要多久
 	nap time.Duration
 }
 
@@ -61,6 +63,7 @@ func NewController(
 		maxRetries:        3,
 		chanceOfFailure:   chanceOfFailure,
 		nap:               nap,
+		processingItems:   &sync.WaitGroup{},
 	}
 }
 
@@ -70,7 +73,7 @@ func (c *SlothController) Run(sloths int, stopCh chan struct{}) error {
 	// 提供一个 panic recover 的统一入口，
 	// 默认只是记录日志，该 panic 还是 panic。
 	defer runtime.HandleCrash()
-	// 关闭队列让 sloths 不要再处理任务
+	// 退出前关闭队列让树懒们不要再接手新任务
 	defer c.queue.ShutDown()
 
 	klog.Info("SlothController starting...")
@@ -91,6 +94,10 @@ func (c *SlothController) Run(sloths int, stopCh chan struct{}) error {
 	// 等待 stopCh 关闭
 	<-stopCh
 
+	// 等待正在执行中的任务完成
+	klog.Info("waiting for processing items to finish...")
+	c.processingItems.Wait()
+
 	return nil
 }
 
@@ -107,12 +114,17 @@ func (c *SlothController) processNextItem() bool {
 		return false // 队列已进入退出状态，不要继续处理
 	}
 
-	// 任务完成后记得标记完成，因为尽管有多个 sloths，
-	// 但对相同 key 的多个任务是不会并行处理的。
+	c.processingItems.Add(1)
+
+	// 任务完成后，无论成功与否，都记得标记完成，因为尽管有多只树懒，
+	// 但对相同 key 的多个任务是不会并行处理的，
+	// 如果相同 key 有多个事件，不要阻塞处理。
 	defer c.queue.Done(key)
 
 	result := c.processItem(key)
 	c.handleErr(key, result)
+
+	c.processingItems.Done()
 
 	return true
 }
@@ -141,14 +153,14 @@ func (c *SlothController) handleErr(key interface{}, result error) {
 
 	if c.queue.NumRequeues(key) < c.maxRetries {
 		klog.Warningf("error processing %s: %v", key, result)
-		// 重试
+		// 执行失败，重试
 		c.queue.AddRateLimited(key)
 		return
 	}
 
 	// 重试次数过多，日志记录错误，同时也别忘了清空重试记录
 	c.queue.Forget(key)
-	// runtime.HandleError 是 Kubernetes 官方提供的错误处理错误响应方法，
+	// runtime.HandleError 是 Kubernetes 官方提供的错误响应方法，
 	// 提供一个错误响应的统一入口。
 	runtime.HandleError(fmt.Errorf("max retries exceeded, "+
 		"dropping item %s out of the queue: %v", key, result))
@@ -189,14 +201,15 @@ func main() {
 
 	stopCh := make(chan struct{})
 
-	// 响应中断信号
+	// 响应中断信号 (Ctrl+C)
 	interrupted := make(chan os.Signal)
 	signal.Notify(interrupted, os.Interrupt)
 
-	// 当 interrupted 关闭时，关闭 stopCh
 	go func() {
-		<-interrupted
+		<-interrupted // 第 1 次收到中断信号时关闭 stopCh
 		close(stopCh)
+		<-interrupted // 第 2 次收到中断信号时直接退出
+		os.Exit(1)
 	}()
 
 	if err := controller.Run(sloths, stopCh); err != nil {
