@@ -10,7 +10,8 @@ import (
 func main() {
 	fmt.Println("----- 9-shared-informer-factory -----")
 
-	// mustClientset 用于创建 kubernetes.Interface 实例；
+	// mustClientset 用于创建 kubernetes.Interface 实例，
+	// 代码在前一部分中；
 	// 第 2 个参数是 defaultResync，是构建新 Informer 时默认的 resyncPeriod，
 	// resyncPeriod 在前一部分中介绍过了；
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(
