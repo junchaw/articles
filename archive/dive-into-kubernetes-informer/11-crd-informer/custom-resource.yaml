@@ -1,0 +1,15 @@
+apiVersion: "stable.wbsnail.com/v1"
+kind: Rabbit
+metadata:
+  name: judy
+  namespace: tmp
+spec:
+  color: white
+---
+apiVersion: "stable.wbsnail.com/v1"
+kind: Rabbit
+metadata:
+  name: bugs
+  namespace: tmp
+spec:
+  color: gray
