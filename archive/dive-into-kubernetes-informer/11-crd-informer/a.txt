@@ -1,0 +1,57 @@
++ unset GOPATH
++ /Users/wujunchao/projects/code-generator/generate-groups.sh all github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis stable.wbsnail.com:v1 --go-header-file ./boilerplate.go.txt
++ set -o errexit
++ set -o nounset
++ set -o pipefail
++ '[' 6 -lt 4 ']'
++ '[' all == --help ']'
++ GENS=all
++ OUTPUT_PKG=github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client
++ APIS_PKG=github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis
++ GROUPS_WITH_VERSIONS=stable.wbsnail.com:v1
++ shift 4
+++ dirname /Users/wujunchao/projects/code-generator/generate-groups.sh
++ cd /Users/wujunchao/projects/code-generator
++ go install ./cmd/defaulter-gen ./cmd/client-gen ./cmd/lister-gen ./cmd/informer-gen ./cmd/deepcopy-gen
+++ go env GOBIN
++ GOBIN=
+++ go env GOPATH
++ gobin=/Users/wujunchao/go/bin
++ FQ_APIS=()
++ for GVs in '${GROUPS_WITH_VERSIONS}'
++ IFS=:
++ read -r G Vs
++ for V in '${Vs//,/ }'
++ FQ_APIS+=("${APIS_PKG}/${G}/${V}")
++ '[' all = all ']'
++ echo 'Generating deepcopy funcs'
+Generating deepcopy funcs
+++ codegen::join , github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
+++ local IFS=,
+++ shift
+++ echo github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
++ /Users/wujunchao/go/bin/deepcopy-gen --input-dirs github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1 -O zz_generated.deepcopy --bounding-dirs github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis --go-header-file ./boilerplate.go.txt
++ '[' all = all ']'
++ echo 'Generating clientset for stable.wbsnail.com:v1 at github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/clientset'
+Generating clientset for stable.wbsnail.com:v1 at github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/clientset
+++ codegen::join , github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
+++ local IFS=,
+++ shift
+++ echo github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
++ /Users/wujunchao/go/bin/client-gen --clientset-name versioned --input-base '' --input github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1 --output-package github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/clientset --go-header-file ./boilerplate.go.txt
++ '[' all = all ']'
++ echo 'Generating listers for stable.wbsnail.com:v1 at github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/listers'
+Generating listers for stable.wbsnail.com:v1 at github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/listers
+++ codegen::join , github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
+++ local IFS=,
+++ shift
+++ echo github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
++ /Users/wujunchao/go/bin/lister-gen --input-dirs github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1 --output-package github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/listers --go-header-file ./boilerplate.go.txt
++ '[' all = all ']'
++ echo 'Generating informers for stable.wbsnail.com:v1 at github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/informers'
+Generating informers for stable.wbsnail.com:v1 at github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/informers
+++ codegen::join , github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
+++ local IFS=,
+++ shift
+++ echo github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1
++ /Users/wujunchao/go/bin/informer-gen --input-dirs github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1 --versioned-clientset-package github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/clientset/versioned --listers-package github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/listers --output-package github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/informers --go-header-file ./boilerplate.go.txt
