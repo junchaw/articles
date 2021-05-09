@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	stablev1 "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1"
+	stablev1 "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/api/stable.wbsnail.com/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

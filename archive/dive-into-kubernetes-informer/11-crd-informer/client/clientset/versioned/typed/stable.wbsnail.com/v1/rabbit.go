@@ -22,7 +22,7 @@ import (
 	"context"
 	"time"
 
-	v1 "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1"
+	v1 "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/api/stable.wbsnail.com/v1"
 	scheme "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"

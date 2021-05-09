@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/spongeprojects/magicconch"
-	v1 "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/apis/stable.wbsnail.com/v1"
+	v1 "github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/api/stable.wbsnail.com/v1"
 	"github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/clientset/versioned"
 	"github.com/wbsnail/articles/archive/dive-into-kubernetes-informer/11-crd-informer/client/informers/externalversions"
 	"k8s.io/client-go/tools/cache"
