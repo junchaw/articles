@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"math/rand"
 	"os"
@@ -25,10 +26,15 @@ type Application struct {
 	NodeName string
 }
 
+type Calculator struct {
+	pods map[string]map[string]bool
+	memo map[[16]byte][]string
+}
+
 // upgradeStep finds most nodes that can be upgraded at once:
 //
 // this can be solved by dynamic programming because it meets two requirements:
-// - optimal substructure: whether we choose to upgrade a node or not,
+// - optimal substructure: whether we choose to calculate a node or not,
 //   the optimal solution of the problem is also the optimal solution of the rest nodes;
 // - overlapping sub-problems: a node may not affect another if they don't have same apps running,
 //   so the result can be reused;
@@ -36,25 +42,31 @@ type Application struct {
 // transition equation:
 //
 // S(node, budgets) = Max of:
-//       a. not upgrade n1: S(node(without n1), budgets)
-//       b. upgrade n1:     1 + S(node(without n1), budgets(minus pods on n1 because n1 will be upgraded))
+//       a. not calculate n1: S(node(without n1), budgets)
+//       b. calculate n1:     1 + S(node(without n1), budgets(minus pods on n1 because n1 will be upgraded))
 //
-func upgradeStep(indent string, nodes []string, pods map[string][]string, budgets map[string]int) []string {
+func (c *Calculator) upgradeStep(nodes []string, budgets map[string]int) (steps []string) {
 	if debug {
-		fmt.Println(indent, nodes, budgets)
+		fmt.Println(nodes, budgets)
 	}
 
 	if len(nodes) == 0 {
 		return nil
 	}
 
-	stepWhenNotUpgradeFirstNode := upgradeStep(indent+" -", nodes[1:], pods, budgets)
+	hash := md5.Sum([]byte(fmt.Sprintf("%v%v", nodes, budgets)))
+
+	if c.memo[hash] != nil {
+		return c.memo[hash]
+	}
+
+	stepWhenNotUpgradeFirstNode := c.upgradeStep(nodes[1:], budgets)
 
 	canUpgradeFirstNode := true
-	appsOnFirstNode := pods[nodes[0]]
+	appsOnFirstNode := c.pods[nodes[0]]
 	budgetsIfUpgradeFirstNode := make(map[string]int)
 	for app := range budgets {
-		if stringInSlice(app, appsOnFirstNode) {
+		if appsOnFirstNode[app] {
 			budgetsIfUpgradeFirstNode[app] = budgets[app] - 1
 			if budgetsIfUpgradeFirstNode[app] < 0 {
 				canUpgradeFirstNode = false
@@ -66,25 +78,26 @@ func upgradeStep(indent string, nodes []string, pods map[string][]string, budget
 	}
 
 	if !canUpgradeFirstNode {
-		return stepWhenNotUpgradeFirstNode
+		steps = stepWhenNotUpgradeFirstNode
+	} else {
+		stepWhenUpgradeFirstNode := c.upgradeStep(nodes[1:], budgetsIfUpgradeFirstNode)
+		if len(stepWhenUpgradeFirstNode)+1 > len(stepWhenNotUpgradeFirstNode) {
+			steps = append([]string{nodes[0]}, stepWhenUpgradeFirstNode...)
+		} else {
+			steps = stepWhenNotUpgradeFirstNode
+		}
 	}
-
-	stepWhenUpgradeFirstNode := upgradeStep(indent+" +", nodes[1:], pods, budgetsIfUpgradeFirstNode)
-	if len(stepWhenUpgradeFirstNode)+1 > len(stepWhenNotUpgradeFirstNode) {
-		return append([]string{nodes[0]}, stepWhenUpgradeFirstNode...)
-	}
-	return stepWhenNotUpgradeFirstNode
+	c.memo[hash] = steps
+	return steps
 }
 
-// upgrade generates an upgrade plan
-func upgrade(nodes []string, pods map[string][]string, budgets map[string]int) [][]string {
+// calculate generates an upgrade plan
+func (c *Calculator) calculate(nodes []string, budgets map[string]int) [][]string {
 	var plan [][]string
 	for len(nodes) > 0 {
 		var nodesLeft []string
-		step := upgradeStep("", nodes, pods, budgets)
-		if debug {
-			fmt.Printf("step calculated: %v\n\n", step)
-		}
+		step := c.upgradeStep(nodes, budgets)
+		fmt.Printf("step calculated: %v\n\n", step)
 		for _, node := range nodes {
 			if !stringInSlice(node, step) {
 				nodesLeft = append(nodesLeft, node)
@@ -96,21 +109,26 @@ func upgrade(nodes []string, pods map[string][]string, budgets map[string]int) [
 	return plan
 }
 
-// Upgrade generates an upgrade plan
-func Upgrade(nodes []Node, pods []Application, budgets []DisruptionBudget) [][]string {
+// Generate generates an upgrade plan
+func (c *Calculator) Generate(nodes []Node, pods []Application, budgets []DisruptionBudget) [][]string {
 	var nodeNames []string
 	for _, node := range nodes {
 		nodeNames = append(nodeNames, node.NodeName)
 	}
-	podsOnNode := make(map[string][]string)
+	podsOnNode := make(map[string]map[string]bool)
 	for _, pod := range pods {
-		podsOnNode[pod.NodeName] = append(podsOnNode[pod.NodeName], pod.AppName)
+		if podsOnNode[pod.NodeName] == nil {
+			podsOnNode[pod.NodeName] = make(map[string]bool)
+		}
+		podsOnNode[pod.NodeName][pod.AppName] = true
 	}
 	budgetMap := make(map[string]int)
 	for _, budget := range budgets {
 		budgetMap[budget.AppName] = budget.DisruptionAllowed
 	}
-	return upgrade(nodeNames, podsOnNode, budgetMap)
+	c.pods = podsOnNode
+	fmt.Println("calculating...")
+	return c.calculate(nodeNames, budgetMap)
 }
 
 func stringInSlice(str string, slice []string) bool {
@@ -162,8 +180,8 @@ func main() {
 	if len(os.Args) < 3 {
 		fmt.Println("usage: go run . [action]\n" +
 			"\n" +
-			"go run . test 0 # test specific case, index: 0\n" +
-			"go run . random 10 5 # test random generated case, 10 nodes, 5 apps")
+			"go run . testcase 0 # test specific testcase, index: 0\n" +
+			"go run . random 10 5 # test random generated testcase, 10 nodes, 5 apps")
 		return
 	}
 
@@ -171,8 +189,8 @@ func main() {
 
 	var testcase Testcase
 	switch action {
-	case "test":
-		// test specific case
+	case "testcase":
+		// test specific testcase
 		if len(os.Args) < 3 {
 			fmt.Printf("arg missing")
 			return
@@ -186,7 +204,7 @@ func main() {
 		}
 		testcase = testcases[n]
 	case "random":
-		// test random generated case
+		// test random generated testcase
 		if len(os.Args) < 4 {
 			fmt.Printf("arg missing")
 			return
@@ -195,6 +213,7 @@ func main() {
 		nNodes, _ := strconv.Atoi(os.Args[2])
 		nApps, _ := strconv.Atoi(os.Args[3])
 
+		fmt.Println("generating random testcase...")
 		var nodes []Node
 		var pods []Application
 		var budgets []DisruptionBudget
@@ -202,7 +221,12 @@ func main() {
 			nodes = append(nodes, Node{NodeName: fmt.Sprintf("n%d", i+1)})
 		}
 		for i := 0; i < nApps; i++ {
-			expectNumberOfPods := rand.Intn(nNodes)
+			var expectNumberOfPods int
+			if nNodes < 200 {
+				expectNumberOfPods = rand.Intn(nNodes) // like 2/3, 3/5
+			} else {
+				expectNumberOfPods = rand.Intn(200) // like 60/200, 80/5000, not too many
+			}
 			actualNumberOfPods := 0
 			for j := 0; j < nNodes; j++ {
 				if rand.Intn(nNodes) < expectNumberOfPods {
@@ -214,8 +238,14 @@ func main() {
 				}
 			}
 			if actualNumberOfPods > 0 {
+				var disruptionAllowed int
+				if actualNumberOfPods < 100 {
+					disruptionAllowed = rand.Intn(actualNumberOfPods) + 1
+				} else {
+					disruptionAllowed = rand.Intn(100) + 1
+				}
 				budgets = append(budgets, DisruptionBudget{
-					AppName: fmt.Sprintf("app%d", i+1), DisruptionAllowed: rand.Intn(actualNumberOfPods) + 1})
+					AppName: fmt.Sprintf("app%d", i+1), DisruptionAllowed: disruptionAllowed})
 			}
 		}
 		testcase = Testcase{
@@ -228,9 +258,9 @@ func main() {
 		return
 	}
 
-	start := time.Now()
-	plan := Upgrade(testcase.Nodes, testcase.Pods, testcase.Budgets)
-	end := time.Now()
+	calculator := Calculator{
+		memo: make(map[[16]byte][]string),
+	}
 
 	fmt.Printf("\nnodes:\n")
 	for _, node := range testcase.Nodes {
@@ -246,9 +276,16 @@ func main() {
 	for _, budget := range testcase.Budgets {
 		fmt.Printf("  %s: %d\n", budget.AppName, budget.DisruptionAllowed)
 	}
+
+	fmt.Println("preparing...")
+	start := time.Now()
+	plan := calculator.Generate(testcase.Nodes, testcase.Pods, testcase.Budgets)
+	end := time.Now()
+
 	fmt.Printf("plan:\n")
 	for j, step := range plan {
 		fmt.Printf("  step %d: %v\n", j, step)
 	}
+
 	fmt.Printf("time spent: %v\n", end.Sub(start))
 }
