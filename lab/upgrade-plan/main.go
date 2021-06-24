@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -10,6 +10,7 @@ import (
 )
 
 var debug = os.Getenv("DEBUG") != ""
+var counter = 0
 
 type DisruptionBudget struct {
 	AppName           string
@@ -47,17 +48,12 @@ type Calculator struct {
 //
 func (c *Calculator) upgradeStep(nodes []string, budgets map[string]int) (steps []string) {
 	if debug {
-		fmt.Println(nodes, budgets)
+		counter++
+		log.Println(counter, nodes, budgets)
 	}
 
 	if len(nodes) == 0 {
 		return nil
-	}
-
-	hash := md5.Sum([]byte(fmt.Sprintf("%v%v", nodes, budgets)))
-
-	if c.memo[hash] != nil {
-		return c.memo[hash]
 	}
 
 	stepWhenNotUpgradeFirstNode := c.upgradeStep(nodes[1:], budgets)
@@ -87,17 +83,17 @@ func (c *Calculator) upgradeStep(nodes []string, budgets map[string]int) (steps 
 			steps = stepWhenNotUpgradeFirstNode
 		}
 	}
-	c.memo[hash] = steps
 	return steps
 }
 
 // calculate generates an upgrade plan
 func (c *Calculator) calculate(nodes []string, budgets map[string]int) [][]string {
+	log.Println("calculating...")
 	var plan [][]string
 	for len(nodes) > 0 {
 		var nodesLeft []string
 		step := c.upgradeStep(nodes, budgets)
-		fmt.Printf("step calculated: %v\n\n", step)
+		log.Printf("step calculated: %v", step)
 		for _, node := range nodes {
 			if !stringInSlice(node, step) {
 				nodesLeft = append(nodesLeft, node)
@@ -111,6 +107,7 @@ func (c *Calculator) calculate(nodes []string, budgets map[string]int) [][]strin
 
 // Generate generates an upgrade plan
 func (c *Calculator) Generate(nodes []Node, pods []Application, budgets []DisruptionBudget) [][]string {
+	log.Println("preparing...")
 	var nodeNames []string
 	for _, node := range nodes {
 		nodeNames = append(nodeNames, node.NodeName)
@@ -127,7 +124,6 @@ func (c *Calculator) Generate(nodes []Node, pods []Application, budgets []Disrup
 		budgetMap[budget.AppName] = budget.DisruptionAllowed
 	}
 	c.pods = podsOnNode
-	fmt.Println("calculating...")
 	return c.calculate(nodeNames, budgetMap)
 }
 
@@ -192,7 +188,7 @@ func main() {
 	case "testcase":
 		// test specific testcase
 		if len(os.Args) < 3 {
-			fmt.Printf("arg missing")
+			fmt.Println("arg missing")
 			return
 		}
 
@@ -206,7 +202,7 @@ func main() {
 	case "random":
 		// test random generated testcase
 		if len(os.Args) < 4 {
-			fmt.Printf("arg missing")
+			fmt.Println("arg missing")
 			return
 		}
 
@@ -272,20 +268,15 @@ func main() {
 		}
 		fmt.Printf("  %s: %v\n", node.NodeName, podsOnNode)
 	}
-	fmt.Printf("budgets:\n")
+	fmt.Println("budgets:")
 	for _, budget := range testcase.Budgets {
 		fmt.Printf("  %s: %d\n", budget.AppName, budget.DisruptionAllowed)
 	}
+	fmt.Println()
 
-	fmt.Println("preparing...")
 	start := time.Now()
-	plan := calculator.Generate(testcase.Nodes, testcase.Pods, testcase.Budgets)
+	_ = calculator.Generate(testcase.Nodes, testcase.Pods, testcase.Budgets)
 	end := time.Now()
 
-	fmt.Printf("plan:\n")
-	for j, step := range plan {
-		fmt.Printf("  step %d: %v\n", j, step)
-	}
-
-	fmt.Printf("time spent: %v\n", end.Sub(start))
+	fmt.Printf("\ntime spent: %v\n", end.Sub(start))
 }
