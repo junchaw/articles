@@ -32,21 +32,8 @@ type Calculator struct {
 	memo map[[16]byte][]string
 }
 
-// upgradeStep finds most nodes that can be upgraded at once:
-//
-// this can be solved by dynamic programming because it meets two requirements:
-// - optimal substructure: whether we choose to calculate a node or not,
-//   the optimal solution of the problem is also the optimal solution of the rest nodes;
-// - overlapping sub-problems: a node may not affect another if they don't have same apps running,
-//   so the result can be reused;
-//
-// transition equation:
-//
-// S(node, budgets) = Max of:
-//       a. not calculate n1: S(node(without n1), budgets)
-//       b. calculate n1:     1 + S(node(without n1), budgets(minus pods on n1 because n1 will be upgraded))
-//
-func (c *Calculator) upgradeStep(nodes []string, budgets map[string]int) (steps []string) {
+// calculateStep finds most nodes that can be upgraded at once
+func (c *Calculator) calculateStep(nodes []string, budgets map[string]int) (steps []string) {
 	if debug {
 		counter++
 		log.Println(counter, nodes, budgets)
@@ -56,7 +43,7 @@ func (c *Calculator) upgradeStep(nodes []string, budgets map[string]int) (steps 
 		return nil
 	}
 
-	stepWhenNotUpgradeFirstNode := c.upgradeStep(nodes[1:], budgets)
+	stepWhenNotUpgradeFirstNode := c.calculateStep(nodes[1:], budgets)
 
 	canUpgradeFirstNode := true
 	appsOnFirstNode := c.pods[nodes[0]]
@@ -76,7 +63,7 @@ func (c *Calculator) upgradeStep(nodes []string, budgets map[string]int) (steps 
 	if !canUpgradeFirstNode {
 		steps = stepWhenNotUpgradeFirstNode
 	} else {
-		stepWhenUpgradeFirstNode := c.upgradeStep(nodes[1:], budgetsIfUpgradeFirstNode)
+		stepWhenUpgradeFirstNode := c.calculateStep(nodes[1:], budgetsIfUpgradeFirstNode)
 		if len(stepWhenUpgradeFirstNode)+1 > len(stepWhenNotUpgradeFirstNode) {
 			steps = append([]string{nodes[0]}, stepWhenUpgradeFirstNode...)
 		} else {
@@ -92,7 +79,7 @@ func (c *Calculator) calculate(nodes []string, budgets map[string]int) [][]strin
 	var plan [][]string
 	for len(nodes) > 0 {
 		var nodesLeft []string
-		step := c.upgradeStep(nodes, budgets)
+		step := c.calculateStep(nodes, budgets)
 		log.Printf("step calculated: %v", step)
 		for _, node := range nodes {
 			if !stringInSlice(node, step) {
@@ -105,8 +92,8 @@ func (c *Calculator) calculate(nodes []string, budgets map[string]int) [][]strin
 	return plan
 }
 
-// Generate generates an upgrade plan
-func (c *Calculator) Generate(nodes []Node, pods []Application, budgets []DisruptionBudget) [][]string {
+// GeneratePlan generates an upgrade plan
+func (c *Calculator) GeneratePlan(nodes []Node, pods []Application, budgets []DisruptionBudget) [][]string {
 	log.Println("preparing...")
 	var nodeNames []string
 	for _, node := range nodes {
@@ -275,7 +262,7 @@ func main() {
 	fmt.Println()
 
 	start := time.Now()
-	_ = calculator.Generate(testcase.Nodes, testcase.Pods, testcase.Budgets)
+	_ = calculator.GeneratePlan(testcase.Nodes, testcase.Pods, testcase.Budgets)
 	end := time.Now()
 
 	fmt.Printf("\ntime spent: %v\n", end.Sub(start))
