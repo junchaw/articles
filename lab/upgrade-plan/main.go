@@ -32,42 +32,33 @@ type Calculator struct {
 	memo map[[16]byte][]string
 }
 
-// calculateStep finds most nodes that can be upgraded at once
+// calculateStep finds nodes that can be upgraded at once
 func (c *Calculator) calculateStep(nodes []string, budgets map[string]int) (steps []string) {
 	if debug {
 		counter++
 		log.Println(counter, nodes, budgets)
 	}
 
-	if len(nodes) == 0 {
-		return nil
-	}
-
-	stepWhenNotUpgradeFirstNode := c.calculateStep(nodes[1:], budgets)
-
-	canUpgradeFirstNode := true
-	appsOnFirstNode := c.pods[nodes[0]]
-	budgetsIfUpgradeFirstNode := make(map[string]int)
-	for app := range budgets {
-		if appsOnFirstNode[app] {
-			budgetsIfUpgradeFirstNode[app] = budgets[app] - 1
-			if budgetsIfUpgradeFirstNode[app] < 0 {
-				canUpgradeFirstNode = false
-				break
+	budgetsLeft := budgets
+	for _, node := range nodes {
+		canUpgrade := true
+		appsOnNode := c.pods[node]
+		budgetsIfUpgrade := make(map[string]int)
+		for app := range budgetsLeft {
+			if appsOnNode[app] {
+				budgetsIfUpgrade[app] = budgetsLeft[app] - 1
+				if budgetsIfUpgrade[app] < 0 {
+					canUpgrade = false
+					break
+				}
+			} else {
+				budgetsIfUpgrade[app] = budgetsLeft[app]
 			}
-		} else {
-			budgetsIfUpgradeFirstNode[app] = budgets[app]
 		}
-	}
 
-	if !canUpgradeFirstNode {
-		steps = stepWhenNotUpgradeFirstNode
-	} else {
-		stepWhenUpgradeFirstNode := c.calculateStep(nodes[1:], budgetsIfUpgradeFirstNode)
-		if len(stepWhenUpgradeFirstNode)+1 > len(stepWhenNotUpgradeFirstNode) {
-			steps = append([]string{nodes[0]}, stepWhenUpgradeFirstNode...)
-		} else {
-			steps = stepWhenNotUpgradeFirstNode
+		if canUpgrade {
+			budgetsLeft = budgetsIfUpgrade
+			steps = append(steps, node)
 		}
 	}
 	return steps
@@ -87,6 +78,9 @@ func (c *Calculator) calculate(nodes []string, budgets map[string]int) [][]strin
 			}
 		}
 		plan = append(plan, step)
+		if len(nodes) == len(nodesLeft) {
+			log.Fatalf("no nodes can be upgraded: %v", nodes)
+		}
 		nodes = nodesLeft
 	}
 	return plan
